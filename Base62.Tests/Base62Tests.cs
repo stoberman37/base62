@@ -31,6 +31,61 @@ namespace Base62.Tests
             Assert.Equal(input, decoded);
         }
 
+        [Theory]
+#if NET481
+        [InlineData(null, typeof(ArgumentNullException), "value cannot be null or empty\r\nParameter name: charset")]
+        [InlineData("", typeof(ArgumentNullException), "value cannot be null or empty\r\nParameter name: charset")]
+        [InlineData(" ", typeof(ArgumentNullException), "value cannot be null or empty\r\nParameter name: charset")]
+        [InlineData("\t", typeof(ArgumentNullException), "value cannot be null or empty\r\nParameter name: charset")]
+        [InlineData("ABC", typeof(ArgumentException), "charset must contain 62 characters\r\nParameter name: charset")]
+        [InlineData("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.", typeof(ArgumentException), "charset must contain 62 characters\r\nParameter name: charset")]
+        [InlineData("00123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstvwxyz", typeof(ArgumentException), "charset must contain unique characters\r\nParameter name: charset")]
+        [InlineData("0123456789ABCDEFGHIJKLMNOPQRSTUVVWXYZabcdefghijklmnopqrstvwxyz", typeof(ArgumentException), "charset must contain unique characters\r\nParameter name: charset")]
+        [InlineData("013456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzz", typeof(ArgumentException), "charset must contain unique characters\r\nParameter name: charset")]
+        [InlineData("123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", typeof(ArgumentException), "charset must contain only characters A-Z, a-z, and 0-9\r\nParameter name: charset")]
+#else
+        [InlineData(null, typeof(ArgumentNullException), "value cannot be null or empty (Parameter 'charset')")]
+        [InlineData("", typeof(ArgumentNullException), "value cannot be null or empty (Parameter 'charset')")]
+        [InlineData(" ", typeof(ArgumentNullException), "value cannot be null or empty (Parameter 'charset')")]
+        [InlineData("\t", typeof(ArgumentNullException), "value cannot be null or empty (Parameter 'charset')")]
+        [InlineData("ABC", typeof(ArgumentException), "charset must contain 62 characters (Parameter 'charset')")]
+        [InlineData("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.", typeof(ArgumentException), "charset must contain 62 characters (Parameter 'charset')")]
+        [InlineData("00123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstvwxyz", typeof(ArgumentException), "charset must contain unique characters (Parameter 'charset')")]
+        [InlineData("0123456789ABCDEFGHIJKLMNOPQRSTUVVWXYZabcdefghijklmnopqrstvwxyz", typeof(ArgumentException), "charset must contain unique characters (Parameter 'charset')")]
+        [InlineData("013456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzz", typeof(ArgumentException), "charset must contain unique characters (Parameter 'charset')")]
+        [InlineData("123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", typeof(ArgumentException), "charset must contain only characters A-Z, a-z, and 0-9 (Parameter 'charset')")]
+#endif
+        public void CustomerCharacterSet_Constructor_Errors(string charset, Type exceptionType, string message)
+        {
+            var ex = Record.Exception(() => new Base62Converter(charset));
+            Assert.True(ex.GetType() == exceptionType);
+            switch (ex)
+            {
+                case ArgumentNullException a:
+                    Assert.Equal("charset", a.ParamName);
+                    break;
+                case ArgumentException a:
+                    Assert.Equal("charset", a.ParamName);
+                    break;
+            }
+            Assert.Equal(message, ex.Message);
+        }
+        
+        [Theory]
+        [InlineData("120", "tewV2EFDk51cLaMphrnJSCyj4YNWzdxgOuTqIolQ6bfmK97XiA30UP8sGRBvHZ")]
+        [InlineData("love爱", "tewV2EFDk51cLaMphrnJSCyj4YNWzdxgOuTqIolQ6bfmK97XiA30UP8sGRBvHZ")]
+        [InlineData("abc123XYZ", "tewV2EFDk51cLaMphrnJSCyj4YNWzdxgOuTqIolQ6bfmK97XiA30UP8sGRBvHZ")]
+        [InlineData("https://abc123XYZ.com/?@1234=2345", "tewV2EFDk51cLaMphrnJSCyj4YNWzdxgOuTqIolQ6bfmK97XiA30UP8sGRBvHZ")]
+        public void Custom_CanBe_Decoded(string input, string charset)
+        {
+            var converter = new Base62Converter(charset);
+            var encoded = converter.Encode(input);
+
+            var decoded = converter.Decode(encoded);
+
+            Assert.Equal(input, decoded);
+        }
+
         [Fact]
         public void NonAscii_CanBe_Decoded()
         {

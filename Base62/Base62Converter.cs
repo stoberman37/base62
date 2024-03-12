@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Base62
 {
@@ -12,6 +15,7 @@ namespace Base62
         private const string DEFAULT_CHARACTER_SET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         private const string INVERTED_CHARACTER_SET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
         private readonly string characterSet;
+        private static readonly Regex match = new Regex("[^A-Za-z0-9]+", RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of <see cref="Base62Converter"/>.
@@ -31,6 +35,19 @@ namespace Base62
                 characterSet = DEFAULT_CHARACTER_SET;
             else
                 characterSet = INVERTED_CHARACTER_SET;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="Base62Converter"/> with the provided custom character set/>.
+        /// </summary>
+        /// <param name="charset"></param>
+        public Base62Converter(string charset)
+        {
+            if (string.IsNullOrWhiteSpace(charset)) throw new ArgumentNullException(nameof(charset), "value cannot be null or empty");
+            if (charset.Length != 62) throw new ArgumentException("charset must contain 62 characters", nameof(charset));
+            if (charset.ToList().Distinct().Count() != 62) throw new ArgumentException("charset must contain unique characters", nameof(charset));
+            if (match.Match(charset).Length > 0) throw new ArgumentException("charset must contain only characters A-Z, a-z, and 0-9", nameof(charset));
+            characterSet = charset;
         }
 
         /// <summary>
